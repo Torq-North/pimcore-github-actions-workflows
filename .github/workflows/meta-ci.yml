@@ -30,14 +30,14 @@ jobs:
     name: "Test CI workflow against Pimcore skeleton 2024.x"
     uses: ./.github/workflows/ci-docker.yml
     with:
-      PROJECT_REPOSITORY: TorqIT/pimcore-skeleton
+      PROJECT_REPOSITORY: Torq-North/pimcore-skeleton
       PROJECT_REPOSITORY_REF: 2024.x
 
   skeleton-2025-x:
     name: "Test CI workflow against Pimcore skeleton 2025.x"
     uses: ./.github/workflows/ci-docker.yml
     with:
-      PROJECT_REPOSITORY: TorqIT/pimcore-skeleton
+      PROJECT_REPOSITORY: Torq-North/pimcore-skeleton
       PROJECT_REPOSITORY_REF: 2025.x
       RUN_UNIT_TESTS: true
     secrets:

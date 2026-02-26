@@ -8,7 +8,7 @@
 #      cancel-in-progress: true
 # jobs:
 #   ci:
-#     uses: TorqIT/pimcore-github-actions-workflows/.github/workflows/ci-docker.yml@v7
+#     uses: Torq-North/pimcore-github-actions-workflows/.github/workflows/ci-docker.yml@v7
 #     permissions:
 #       contents: read
 #       actions: read
@@ -29,7 +29,7 @@ on:
       RUNNER:
         required: false
         type: string
-        description: Optional self-hosted runner for this workflow (see https://github.com/TorqIT/pimcore-github-actions-workflows#self-hosted-runners)
+        description: Optional self-hosted runner for this workflow (see https://github.com/Torq-North/pimcore-github-actions-workflows#self-hosted-runners)
       PROJECT_REPOSITORY:
         required: false
         default: "${{ github.repository }}"
@@ -190,14 +190,14 @@ jobs:
         id: workflow-version
         uses: canonical/get-workflow-version-action@v1
         with:
-          repository-name: TorqIT/pimcore-github-actions-workflows
+          repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: ci-docker.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
         uses: actions/checkout@v4
         with:
-          repository: TorqIT/pimcore-github-actions-workflows
+          repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
@@ -234,14 +234,14 @@ jobs:
         id: workflow-version
         uses: canonical/get-workflow-version-action@v1
         with:
-          repository-name: TorqIT/pimcore-github-actions-workflows
+          repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: ci-docker.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
         uses: actions/checkout@v4
         with:
-          repository: TorqIT/pimcore-github-actions-workflows
+          repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
@@ -292,14 +292,14 @@ jobs:
         id: workflow-version
         uses: canonical/get-workflow-version-action@v1
         with:
-          repository-name: TorqIT/pimcore-github-actions-workflows
+          repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: ci-docker.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
         uses: actions/checkout@v4
         with:
-          repository: TorqIT/pimcore-github-actions-workflows
+          repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
@@ -356,14 +356,14 @@ jobs:
         id: workflow-version
         uses: canonical/get-workflow-version-action@v1
         with:
-          repository-name: TorqIT/pimcore-github-actions-workflows
+          repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: ci-docker.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
         uses: actions/checkout@v4
         with:
-          repository: TorqIT/pimcore-github-actions-workflows
+          repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
@@ -415,14 +415,14 @@ jobs:
         id: workflow-version
         uses: canonical/get-workflow-version-action@v1
         with:
-          repository-name: TorqIT/pimcore-github-actions-workflows
+          repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: ci-docker.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
         uses: actions/checkout@v4
         with:
-          repository: TorqIT/pimcore-github-actions-workflows
+          repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1

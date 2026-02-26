@@ -6,7 +6,7 @@
 #     types: [opened, reopened, synchronize]
 # jobs:
 #   build-images:
-#     uses: TorqIT/pimcore-github-actions-workflows/.github/workflows/docker-builds@v7
+#     uses: Torq-North/pimcore-github-actions-workflows/.github/workflows/docker-builds@v7
 #     secrets:
 #        BUILD_TIME_SECRETS: >
 #          {
@@ -28,7 +28,7 @@ on:
       RUNNER:
         required: false
         type: string
-        description: Optional self-hosted runner for this workflow (see https://github.com/TorqIT/pimcore-github-actions-workflows#self-hosted-runners)
+        description: Optional self-hosted runner for this workflow (see https://github.com/Torq-North/pimcore-github-actions-workflows#self-hosted-runners)
       NPM_BUILD:
         required: false
         type: boolean
@@ -126,14 +126,14 @@ jobs:
         id: workflow-version
         uses: canonical/get-workflow-version-action@v1
         with:
-          repository-name: TorqIT/pimcore-github-actions-workflows
+          repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: docker-builds.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
         uses: actions/checkout@v4
         with:
-          repository: TorqIT/pimcore-github-actions-workflows
+          repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
