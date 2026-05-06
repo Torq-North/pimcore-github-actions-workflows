@@ -123,6 +123,11 @@ on:
         type: string
         default: "tests"
         description: "The directory where unit tests are located - note this should be relative to the Pimcore root, as once inside the container the working directory is set to the Pimcore root"
+      PRE_UNIT_TEST_COMMANDS:
+        required: false
+        type: string
+        default: ""
+        description: "Shell commands to run after Pimcore install and before unit tests"
       GITHUB_APP_CHECKOUT:
         required: false
         type: boolean
@@ -447,3 +452,4 @@ jobs:
           PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
           TORQ_GITHUB_TOKEN: ${{ secrets.TORQ_GITHUB_TOKEN }}
           UNIT_TESTS_DIRECTORY: ${{ inputs.UNIT_TESTS_DIRECTORY }}
+          PRE_UNIT_TEST_COMMANDS: ${{ inputs.PRE_UNIT_TEST_COMMANDS }}

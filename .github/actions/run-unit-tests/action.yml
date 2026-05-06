@@ -34,6 +34,10 @@ inputs:
   UNIT_TESTS_DIRECTORY:
     required: true
     description: "The directory where the unit tests are located" 
+  PRE_UNIT_TEST_COMMANDS:
+    required: false
+    default: ""
+    description: "Shell commands to run after Pimcore install and before unit tests"
 
 runs: 
   using: "composite"
@@ -106,6 +110,7 @@ runs:
           -e PIMCORE_INSTALL_ENCRYPTION_SECRET='${{ inputs.PIMCORE_ENCRYPTION_SECRET }}' \
           -e PIMCORE_INSTALL_INSTANCE_IDENTIFIER='${{ inputs.PIMCORE_INSTANCE_IDENTIFIER }}' \
           -e PIMCORE_INSTALL_PRODUCT_KEY='${{ inputs.PIMCORE_PRODUCT_KEY }}' \
+          -e PRE_UNIT_TEST_COMMANDS='${{ inputs.PRE_UNIT_TEST_COMMANDS }}' \
           --entrypoint /bin/bash \
           init:test \
           -c '
@@ -117,6 +122,11 @@ runs:
             if [ ! -d "/var/www/html/var/classes/DataObject" ] || [ -z "$(ls -A /var/www/html/var/classes/DataObject 2>/dev/null)" ]; then
               echo "Building Data Object classes..."
               runuser -u www-data -- /var/www/html/bin/console pimcore:build:classes
+            fi
+
+            if [ -n "$PRE_UNIT_TEST_COMMANDS" ]; then
+              echo "Running pre-test commands..."
+              runuser -u www-data -- /bin/bash -lc "$PRE_UNIT_TEST_COMMANDS"
             fi
             
             echo "Running tests..."
