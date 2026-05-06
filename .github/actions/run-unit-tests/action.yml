@@ -126,6 +126,8 @@ runs:
 
             if [ -n "$PRE_UNIT_TEST_COMMANDS" ]; then
               echo "Running pre-test commands..."
+              echo "Commands to be run: "
+              echo $PRE_UNIT_TEST_COMMANDS
               runuser -u www-data -- /bin/bash -lc "$PRE_UNIT_TEST_COMMANDS"
             fi
             
