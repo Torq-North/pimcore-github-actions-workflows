@@ -26,12 +26,12 @@ jobs:
     uses: ./.github/workflows/ci-docker.yml
     strategy:
       matrix:
-        branch: [2024.x, 2025.x]
+        branch: [2025.x]
     with:
       PROJECT_REPOSITORY: Torq-North/pimcore-skeleton
       PROJECT_REPOSITORY_REF: ${{ matrix.branch }}
       GITHUB_APP_CHECKOUT: true
-      RUN_UNIT_TESTS: ${{ matrix.branch != '2024.x' }}
+      RUN_UNIT_TESTS: true
       POST_SCAN_RESULTS_TO_PR: true
     secrets:
       GITHUB_APP_ID: ${{ secrets.GH_APP_ID }}
