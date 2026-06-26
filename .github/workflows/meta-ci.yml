@@ -12,39 +12,30 @@ concurrency:
 
 jobs:
   meta:
-    name: "Meta CI checks"
+    name: "Meta CI checks on workflows repo"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Lint files
         uses: ./.github/actions/lint
 
-      - name: Lint GitHub Actions workflows
-        uses: docker://rhysd/actionlint:latest
-        with:
-          args: -color -shellcheck=
-
-  skeleton-2024-x:
-    name: "Test CI workflow against Pimcore skeleton 2024.x"
+  skeleton-ci:
+    name: "Test CI workflow against Pimcore skeleton"
     uses: ./.github/workflows/ci-docker.yml
+    strategy:
+      matrix:
+        branch: [2025.x]
     with:
       PROJECT_REPOSITORY: Torq-North/pimcore-skeleton
-      PROJECT_REPOSITORY_REF: 2024.x
-
-  skeleton-2025-x:
-    name: "Test CI workflow against Pimcore skeleton 2025.x"
-    uses: ./.github/workflows/ci-docker.yml
-    with:
-      PROJECT_REPOSITORY: Torq-North/pimcore-skeleton
-      PROJECT_REPOSITORY_REF: 2025.x
+      PROJECT_REPOSITORY_REF: ${{ matrix.branch }}
+      GITHUB_APP_CHECKOUT: true
       RUN_UNIT_TESTS: true
+      POST_SCAN_RESULTS_TO_PR: true
     secrets:
+      GITHUB_APP_ID: ${{ secrets.GH_APP_ID }}
+      GITHUB_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
       PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
       PIMCORE_INSTANCE_IDENTIFIER: ${{ secrets.PIMCORE_INSTANCE_IDENTIFIER }}
       PIMCORE_PRODUCT_KEY: ${{ secrets.PIMCORE_PRODUCT_KEY }}
-
-  # TODO test CD to Azure
-
-  # TODO test CD to VM

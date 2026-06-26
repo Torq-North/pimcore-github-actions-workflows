@@ -181,6 +181,21 @@ on:
         type: boolean
         default: false
         description: "Whether database deployment steps should be skipped when applying Azure infrastructure changes"
+      FEATURE_FLAG_INSTALL_MISSING_BUNDLES:
+        required: false
+        type: boolean
+        default: false
+        description: "Feature flag - whether to automatically install missing required Pimcore bundles (e.g. Azure Flysystem bundle). Will be removed and assumed true in a future release."
+      FEATURE_FLAG_DISABLE_CONFIG_COPY:
+        required: false
+        type: boolean
+        default: false
+        description: "Feature flag - whether to disable copying of config files for Azure MySQL and Azure Storage. Will be removed and assumed true in a future release."
+      GITHUB_APP_CHECKOUT:
+        required: false
+        type: boolean
+        default: false
+        description: "Whether to use a GitHub App token for checking out the project repository and submodules"
 
     secrets:
       SERVICE_PRINCIPAL_ID:
@@ -213,45 +228,58 @@ on:
       SLACK_WORKFLOW_STATUS_WEBHOOK_URL:
         required: false
         description: (Optional) Slack webhook URL to send workflow results to
+      GITHUB_APP_ID:
+        required: false
+        description: The ID of the GitHub App used to generate a token for checking out the project repository and submodules
+      GITHUB_APP_PRIVATE_KEY:
+        required: false
+        description: The private key of the GitHub App used to generate a token for checking out the project repository and submodules
 
 jobs:
   build-and-push-images:
     name: Build and push Pimcore Docker images
     runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
     environment: ${{ inputs.ENVIRONMENT }}
+    outputs:
+      workflow-version: ${{ steps.workflow-version.outputs.version }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.PROJECT_REPOSITORY }}
-          ref: ${{ inputs.PROJECT_REPOSITORY_REF }}
-          submodules: ${{ inputs.SUBMODULES }}
-          fetch-depth: 0
-
       - name: Get workflow version
         id: workflow-version
-        uses: canonical/get-workflow-version-action@v1
+        uses: canonical/get-workflow-version-action@b21f2a1dad0467fd79081fa16dad4f4935fc6253 # v1.0.3
         with:
           repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: deploy-to-azure-container-apps.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
 
+      - name: Check out project repository and submodules
+        uses: ./reusable-workflow/.github/actions/checkout
+        with:
+          PROJECT_REPOSITORY: ${{ inputs.PROJECT_REPOSITORY }}
+          PROJECT_REPOSITORY_REF: ${{ inputs.PROJECT_REPOSITORY_REF }}
+          SUBMODULES: ${{ inputs.SUBMODULES }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_APP_CHECKOUT: ${{ inputs.GITHUB_APP_CHECKOUT }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+
       - name: Copy config files required for running with Azure Flysystem
         uses: ./reusable-workflow/.github/actions/azure-flysystem-copy-config
+        if: ${{ !inputs.FEATURE_FLAG_DISABLE_CONFIG_COPY }}
         with:
           PIMCORE_ROOT: ${{ inputs.PIMCORE_ROOT }}
 
       - name: Copy config files required for running with an Azure MySQL server
         uses: ./reusable-workflow/.github/actions/azure-mysql-copy-config
+        if: ${{ !inputs.FEATURE_FLAG_DISABLE_CONFIG_COPY }}
         with:
           PIMCORE_ROOT: ${{ inputs.PIMCORE_ROOT }}
 
@@ -261,6 +289,24 @@ jobs:
       - name: Lint files
         if: ${{ inputs.SKIP_LINTING == false }}
         uses: ./reusable-workflow/.github/actions/lint
+
+      - name: Install required bundles if not already installed
+        if: ${{ inputs.FEATURE_FLAG_INSTALL_MISSING_BUNDLES }}
+        run: |
+          set -euo pipefail
+
+          bundles=(
+            "torq/pimcore-flysystem-azure-bundle:^5.3"
+          )
+
+          for bundle in "${bundles[@]}"; do
+            if composer show --no-interaction --no-ansi "$bundle" >/dev/null 2>&1; then
+              echo "$bundle is already installed, skipping"
+            else
+              echo "$bundle not found, installing..."
+              composer require --no-interaction --no-ansi --no-scripts "$bundle"
+            fi
+          done
 
       - name: Log in to Azure
         uses: ./reusable-workflow/.github/actions/azure-login
@@ -366,32 +412,37 @@ jobs:
     name: Deploy and run init Container App Job
     runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
     environment: ${{ inputs.ENVIRONMENT }}
+    outputs:
+      workflow-version: ${{ needs.build-and-push-images.outputs.workflow-version }}
     needs:
       - build-and-push-images
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.PROJECT_REPOSITORY }}
-          ref: ${{ inputs.PROJECT_REPOSITORY_REF }}
-          submodules: ${{ inputs.SUBMODULES }}
-          fetch-depth: 0
-
       - name: Get workflow version
         id: workflow-version
-        uses: canonical/get-workflow-version-action@v1
+        uses: canonical/get-workflow-version-action@b21f2a1dad0467fd79081fa16dad4f4935fc6253 # v1.0.3
         with:
           repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: deploy-to-azure-container-apps.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
+
+      - name: Check out project repository and submodules
+        uses: ./reusable-workflow/.github/actions/checkout
+        with:
+          PROJECT_REPOSITORY: ${{ inputs.PROJECT_REPOSITORY }}
+          PROJECT_REPOSITORY_REF: ${{ inputs.PROJECT_REPOSITORY_REF }}
+          SUBMODULES: ${{ inputs.SUBMODULES }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_APP_CHECKOUT: ${{ inputs.GITHUB_APP_CHECKOUT }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
 
       - name: Install tools for workflows/actions
         uses: ./reusable-workflow/.github/actions/setup-tools
@@ -421,29 +472,32 @@ jobs:
     needs:
       - deploy-and-run-init
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.PROJECT_REPOSITORY }}
-          ref: ${{ inputs.PROJECT_REPOSITORY_REF }}
-          submodules: ${{ inputs.SUBMODULES }}
-          fetch-depth: 0
-
       - name: Get workflow version
         id: workflow-version
-        uses: canonical/get-workflow-version-action@v1
+        uses: canonical/get-workflow-version-action@b21f2a1dad0467fd79081fa16dad4f4935fc6253 # v1.0.3
         with:
           repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: deploy-to-azure-container-apps.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
+
+      - name: Check out project repository and submodules
+        uses: ./reusable-workflow/.github/actions/checkout
+        with:
+          PROJECT_REPOSITORY: ${{ inputs.PROJECT_REPOSITORY }}
+          PROJECT_REPOSITORY_REF: ${{ inputs.PROJECT_REPOSITORY_REF }}
+          SUBMODULES: ${{ inputs.SUBMODULES }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_APP_CHECKOUT: ${{ inputs.GITHUB_APP_CHECKOUT }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
 
       - name: Install tools for workflows/actions
         uses: ./reusable-workflow/.github/actions/setup-tools
@@ -473,29 +527,32 @@ jobs:
     needs:
       - deploy-and-run-init
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.PROJECT_REPOSITORY }}
-          ref: ${{ inputs.PROJECT_REPOSITORY_REF }}
-          submodules: ${{ inputs.SUBMODULES }}
-          fetch-depth: 0
-
       - name: Get workflow version
         id: workflow-version
-        uses: canonical/get-workflow-version-action@v1
+        uses: canonical/get-workflow-version-action@b21f2a1dad0467fd79081fa16dad4f4935fc6253 # v1.0.3
         with:
           repository-name: Torq-North/pimcore-github-actions-workflows
           file-name: deploy-to-azure-container-apps.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout workflow repository to use composite actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: Torq-North/pimcore-github-actions-workflows
           ref: ${{ steps.workflow-version.outputs.sha }}
           path: reusable-workflow
           fetch-depth: 1
+
+      - name: Check out project repository and submodules
+        uses: ./reusable-workflow/.github/actions/checkout
+        with:
+          PROJECT_REPOSITORY: ${{ inputs.PROJECT_REPOSITORY }}
+          PROJECT_REPOSITORY_REF: ${{ inputs.PROJECT_REPOSITORY_REF }}
+          SUBMODULES: ${{ inputs.SUBMODULES }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_APP_CHECKOUT: ${{ inputs.GITHUB_APP_CHECKOUT }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
 
       - name: Install tools for workflows/actions
         uses: ./reusable-workflow/.github/actions/setup-tools
@@ -538,7 +595,7 @@ jobs:
           fi
 
       - name: Send job status to Slack
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         if: steps.check-webhook-url.outputs.slackWebhookDefined == 'true'
         with:
           webhook: ${{ secrets.SLACK_WORKFLOW_STATUS_WEBHOOK_URL }}
