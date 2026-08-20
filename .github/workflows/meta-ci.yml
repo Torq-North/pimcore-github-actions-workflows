@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Lint files
         uses: ./.github/actions/lint
@@ -25,6 +25,7 @@ jobs:
     name: "Test CI workflow against Pimcore skeleton"
     uses: ./.github/workflows/ci-docker.yml
     strategy:
+      fail-fast: false
       matrix:
         branch: [2025.x]
     with:
@@ -32,6 +33,7 @@ jobs:
       PROJECT_REPOSITORY_REF: ${{ matrix.branch }}
       GITHUB_APP_CHECKOUT: true
       RUN_UNIT_TESTS: true
+      RUN_PHPSTAN: true
       POST_SCAN_RESULTS_TO_PR: true
     secrets:
       GITHUB_APP_ID: ${{ secrets.GH_APP_ID }}
@@ -39,3 +41,27 @@ jobs:
       PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
       PIMCORE_INSTANCE_IDENTIFIER: ${{ secrets.PIMCORE_INSTANCE_IDENTIFIER }}
       PIMCORE_PRODUCT_KEY: ${{ secrets.PIMCORE_PRODUCT_KEY }}
+
+  skeleton-ci-azure:
+    name: "Test Azure CD workflow against Pimcore skeleton"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: 2025.x
+            parameters_file: "./.github/ci/azure/parameters.2025.x.json"
+            skeleton_ref: 2025.x-azure
+    uses: ./.github/workflows/meta-ci-azure.yml
+    with:
+      ENVIRONMENT: ${{ matrix.version }}
+      PARAMETERS_FILE: ${{ matrix.parameters_file }}
+      PROJECT_REPOSITORY_REF: ${{ matrix.skeleton_ref }}
+    secrets:
+      PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
+      PIMCORE_INSTANCE_IDENTIFIER: ${{ secrets.PIMCORE_INSTANCE_IDENTIFIER }}
+      PIMCORE_PRODUCT_KEY: ${{ secrets.PIMCORE_PRODUCT_KEY }}
+      CI_SERVICE_PRINCIPAL_PASSWORD: ${{ secrets.CI_SERVICE_PRINCIPAL_PASSWORD }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+  # TODO test CD to VM
