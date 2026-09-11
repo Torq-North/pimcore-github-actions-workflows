@@ -222,6 +222,9 @@ on:
       TORQ_GITHUB_TOKEN:
         required: false
         description: (Optional) A GitHub access token used to access private GitHub repositories
+      REPMAN_CLIENT_TOKEN:
+        required: false
+        description: (Optional) A client token for authenticating with a private Repman Composer repository
       RECAPTCHA_CLIENT_KEY:
         required: false
         description: (Optional) A client key used when building NPM frontends that require ReCAPTCHA
@@ -354,6 +357,7 @@ jobs:
           PIMCORE_INSTANCE_IDENTIFIER: ${{ secrets.PIMCORE_INSTANCE_IDENTIFIER }}
           PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
           TORQ_GITHUB_TOKEN: ${{ secrets.TORQ_GITHUB_TOKEN }}
+          REPMAN_CLIENT_TOKEN: ${{ secrets.REPMAN_CLIENT_TOKEN }}
           CACHE_FROM: type=gha
           CACHE_TO: type=gha,mode=min
           TAGS: |
@@ -372,6 +376,7 @@ jobs:
           PIMCORE_INSTANCE_IDENTIFIER: ${{ secrets.PIMCORE_INSTANCE_IDENTIFIER }}
           PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
           TORQ_GITHUB_TOKEN: ${{ secrets.TORQ_GITHUB_TOKEN }}
+          REPMAN_CLIENT_TOKEN: ${{ secrets.REPMAN_CLIENT_TOKEN }}
           FRONTEND_ROOT: ${{ inputs.FRONTEND_ROOT }}
           NPM_BUILD: ${{ inputs.NPM_BUILD }}
           RECAPTCHA_CLIENT_KEY: ${{ secrets.RECAPTCHA_CLIENT_KEY }}
@@ -394,6 +399,7 @@ jobs:
           PIMCORE_INSTANCE_IDENTIFIER: ${{ secrets.PIMCORE_INSTANCE_IDENTIFIER }}
           PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
           TORQ_GITHUB_TOKEN: ${{ secrets.TORQ_GITHUB_TOKEN }}
+          REPMAN_CLIENT_TOKEN: ${{ secrets.REPMAN_CLIENT_TOKEN }}
           TAGS: |
             ${{ vars.CONTAINER_REGISTRY }}/${{ vars.SUPERVISORD_IMAGE || 'supervisord' }}:latest,
             ${{ vars.CONTAINER_REGISTRY }}/${{ vars.SUPERVISORD_IMAGE || 'supervisord' }}:${{ github.run_id }}

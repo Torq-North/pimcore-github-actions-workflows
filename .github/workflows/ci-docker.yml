@@ -444,6 +444,7 @@ jobs:
           PIMCORE_INSTANCE_IDENTIFIER: ${{ secrets.PIMCORE_INSTANCE_IDENTIFIER }}
           PIMCORE_ENCRYPTION_SECRET: ${{ secrets.PIMCORE_ENCRYPTION_SECRET }}
           TORQ_GITHUB_TOKEN: ${{ secrets.TORQ_GITHUB_TOKEN }}
+          REPMAN_CLIENT_TOKEN: ${{ secrets.REPMAN_CLIENT_TOKEN }}
           FRONTEND_ROOT: ${{ matrix.frontend_root }}
           NPM_BUILD: ${{ matrix.npm_build }}
           RECAPTCHA_CLIENT_KEY: ${{ secrets.RECAPTCHA_CLIENT_KEY }}
