@@ -31,6 +31,9 @@ inputs:
   TORQ_GITHUB_TOKEN:
     required: false
     description: "A GitHub access token used to access private GitHub repositories"
+  REPMAN_CLIENT_TOKEN:
+    required: false
+    description: "(Optional) A client token for authenticating with a private Repman Composer repository"
   UNIT_TESTS_DIRECTORY:
     required: true
     description: "The directory where the unit tests are located" 
@@ -74,6 +77,7 @@ runs:
         PIMCORE_INSTANCE_IDENTIFIER: ${{ inputs.PIMCORE_INSTANCE_IDENTIFIER }}
         PIMCORE_ENCRYPTION_SECRET: ${{ inputs.PIMCORE_ENCRYPTION_SECRET }}
         TORQ_GITHUB_TOKEN: ${{ inputs.TORQ_GITHUB_TOKEN }}
+        REPMAN_CLIENT_TOKEN: ${{ inputs.REPMAN_CLIENT_TOKEN }}
         CACHE_TO: type=gha,mode=max
         CACHE_FROM: type=gha
         PUSH: "false"
