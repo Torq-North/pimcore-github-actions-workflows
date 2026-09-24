@@ -154,6 +154,14 @@ runs:
                 --no-interaction
             fi
 
+            if [ -f "/install-bundles.sh" ]; then
+              echo "Installing bundles..."
+              $RUN_AS /install-bundles.sh
+            fi
+
+            echo Running Doctrine migrations...
+            $RUN_AS /var/www/html/bin/console doctrine:migrations:migrate -n
+
             if [ ! -d "/var/www/html/var/classes/DataObject" ] || [ -z "$(ls -A /var/www/html/var/classes/DataObject 2>/dev/null)" ]; then
               echo "Building Data Object classes..."
               $RUN_AS /var/www/html/bin/console pimcore:build:classes
