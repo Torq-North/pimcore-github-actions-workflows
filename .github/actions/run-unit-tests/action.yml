@@ -154,6 +154,9 @@ runs:
                 --no-interaction
             fi
 
+            echo Running Doctrine migrations...
+            $RUN_AS /var/www/html/bin/console doctrine:migrations:migrate -n
+
             if [ ! -d "/var/www/html/var/classes/DataObject" ] || [ -z "$(ls -A /var/www/html/var/classes/DataObject 2>/dev/null)" ]; then
               echo "Building Data Object classes..."
               $RUN_AS /var/www/html/bin/console pimcore:build:classes
