@@ -90,37 +90,11 @@ runs:
         hasGroup() {
           echo "$inventory" | jq -e --arg group "$1" 'has($group)' > /dev/null
         }
-        if hasGroup mercure || hasGroup pimcore_agent_server; then
+        if hasGroup mercure; then
           echo "needs-mercure-jwt=true" >> "$GITHUB_OUTPUT"
         else
           echo "needs-mercure-jwt=false" >> "$GITHUB_OUTPUT"
         fi
-        if hasGroup pimcore_agent_server; then
-          echo "needs-agent-server-vars=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "needs-agent-server-vars=false" >> "$GITHUB_OUTPUT"
-        fi
-
-    - name: Resolve PHP Container App FQDN
-      id: php-fqdn
-      if: steps.inventory-groups.outputs.needs-agent-server-vars == 'true'
-      shell: bash
-      run: |
-        set -euo pipefail
-        phpContainerApp=$(jq -r '.parameters.phpContainerAppName.value' "${{ inputs.PARAMETERS_FILE }}")
-        echo "fqdn=$(az containerapp show --resource-group "${{ inputs.RESOURCE_GROUP }}" --name "$phpContainerApp" --query "properties.configuration.ingress.fqdn" --output tsv)" >> "$GITHUB_OUTPUT"
-
-    - name: Get ACR access token
-      id: acr-token
-      if: steps.inventory-groups.outputs.needs-agent-server-vars == 'true'
-      shell: bash
-      run: |
-        set -euo pipefail
-        containerRegistryName=$(jq -r '.parameters.containerRegistryName.value' "${{ inputs.PARAMETERS_FILE }}")
-        token=$(az acr login --name "$containerRegistryName" --expose-token --output tsv --query accessToken)
-        echo "::add-mask::$token"
-        echo "registry=$containerRegistryName.azurecr.io" >> "$GITHUB_OUTPUT"
-        echo "token=$token" >> "$GITHUB_OUTPUT"
 
     - name: Fetch secrets and env vars
       shell: bash
@@ -137,52 +111,6 @@ runs:
           mercureJwtKey=$(az keyvault secret show --vault-name "${{ steps.params.outputs.key-vault-name }}" --name "$(findSecretName MERCURE_JWT_KEY)" --query value --output tsv)
           echo "::add-mask::$mercureJwtKey"
           extraVars=$(echo "$extraVars" | jq --arg v "$mercureJwtKey" '. + {mercure_jwt_key: $v}')
-        fi
-
-        if [ "${{ steps.inventory-groups.outputs.needs-agent-server-vars }}" == "true" ]; then
-          agentServerAdminToken=$(az keyvault secret show --vault-name "${{ steps.params.outputs.key-vault-name }}" --name "$(findSecretName AGENT_SERVER_ADMIN_TOKEN)" --query value --output tsv)
-
-          anthropicApiKey=""
-          anthropicSecretName=$(findSecretName ANTHROPIC_API_KEY)
-          if [ -n "$anthropicSecretName" ]; then
-            anthropicApiKey=$(az keyvault secret show --vault-name "${{ steps.params.outputs.key-vault-name }}" --name "$anthropicSecretName" --query value --output tsv)
-          fi
-
-          openAiAuthToken=""
-          openAiSecretName=$(findSecretName OPEN_AI_AUTH_TOKEN)
-          if [ -n "$openAiSecretName" ]; then
-            openAiAuthToken=$(az keyvault secret show --vault-name "${{ steps.params.outputs.key-vault-name }}" --name "$openAiSecretName" --query value --output tsv)
-          fi
-
-          echo "::add-mask::$agentServerAdminToken"
-          echo "::add-mask::$anthropicApiKey"
-          echo "::add-mask::$openAiAuthToken"
-
-          extraVars=$(jq -c '.parameters.additionalEnvVars.value // []' "${{ inputs.PARAMETERS_FILE }}" | jq \
-            --arg adminToken "$agentServerAdminToken" \
-            --arg anthropicKey "$anthropicApiKey" \
-            --arg openAiToken "$openAiAuthToken" \
-            --arg fqdn "${{ steps.php-fqdn.outputs.fqdn }}" \
-            --arg registry "${{ steps.acr-token.outputs.registry }}" \
-            --arg acrToken "${{ steps.acr-token.outputs.token }}" \
-            --argjson base "$extraVars" '
-              (map({(.name): .value}) | add // {}) as $envVars
-              | $base + {
-                  agent_server_admin_token: $adminToken,
-                  anthropic_api_key: $anthropicKey,
-                  open_ai_auth_token: $openAiToken,
-                  pimcore_internal_url: ("https://" + $fqdn),
-                  acr_registry_url: $registry,
-                  acr_username: "00000000-0000-0000-0000-000000000000",
-                  acr_password: $acrToken,
-                  agent_server_copilot_auth_mode: $envVars.AGENT_SERVER_COPILOT_AUTH_MODE,
-                  agent_server_copilot_provider: $envVars.AGENT_SERVER_COPILOT_PROVIDER,
-                  agent_server_copilot_api_key: (if $envVars.AGENT_SERVER_COPILOT_PROVIDER == "openai" then $openAiToken else $anthropicKey end),
-                  agent_server_copilot_model: $envVars.AGENT_SERVER_COPILOT_MODEL,
-                  agent_server_title_model: $envVars.AGENT_SERVER_TITLE_MODEL,
-                  agent_server_available_models: $envVars.AGENT_SERVER_AVAILABLE_MODELS
-                } | with_entries(select(.value != null))
-          ')
         fi
 
         echo "$extraVars" > /tmp/ansible-run/extra-vars.json
