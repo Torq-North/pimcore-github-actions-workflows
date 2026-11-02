@@ -72,6 +72,9 @@
     "phpContainerAppName": {
       "value": "pim-2025x-gh-php-ci"
     },
+    "phpContainerAppTargetPort": {
+      "value": 8080
+    },
     "phpContainerAppMinReplicas": {
       "value": 0
     },
@@ -81,17 +84,11 @@
     "redisContainerAppName": {
       "value": "pim-2025x-gh-redis-ci"
     },
-    "provisionMercure": {
+    "provisionServicesVM": {
       "value": true
     },
-    "mercureContainerAppName": {
-      "value": "pim-2025x-gh-mercure-ci"
-    },
-    "provisionOpensearch": {
-      "value": true
-    },
-    "opensearchContainerAppName": {
-      "value": "pim-2025x-gh-opnsrch-ci"
+    "servicesVmName": {
+      "value": "pim-2025x-gh-services-ci"
     },
     "appDebug": {
       "value": "1"
@@ -112,7 +109,16 @@
       "value": "14"
     },
     "additionalEnvVars": {
-      "value": []
+      "value": [
+        {
+          "name": "OPENSEARCH_HOST",
+          "value": "pim-2025x-gh-services-ci.internal.cloudapp.net:9200"
+        },
+        {
+          "name": "MERCURE_URL_SERVER",
+          "value": "http://pim-2025x-gh-services-ci.internal.cloudapp.net:80/.well-known/mercure"
+        }
+      ]
     },
     "additionalSecrets": {
       "value": {
@@ -136,6 +142,11 @@
             "secretNameInKeyVault": "pimcore-encryption-secret",
             "secretRefInContainerApp": "pimcore-encryption-secret",
             "secretEnvVarNameInContainerApp": "PIMCORE_ENCRYPTION_SECRET"
+          },
+          {
+            "secretNameInKeyVault": "mercure-jwt",
+            "secretRefInContainerApp": "mercure-jwt",
+            "secretEnvVarNameInContainerApp": "MERCURE_JWT_KEY"
           }
         ]
       }

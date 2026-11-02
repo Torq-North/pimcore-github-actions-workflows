@@ -34,6 +34,14 @@ inputs:
   REPMAN_CLIENT_TOKEN:
     required: false
     description: "(Optional) A client token for authenticating with a private Repman Composer repository"
+  RUN_TIME_SECRETS:
+    required: false
+    default: ""
+    description: "JSON object containing run-time secrets and their values in key: value format"
+  RUN_TIME_SECRETS_AS_ENV_VARS:
+    required: false
+    default: "false"
+    description: "For legacy systems - set to true if you want the values in RUN_TIME_SECRETS to also be passed as run-time env vars"
   UNIT_TESTS_DIRECTORY:
     required: true
     description: "The directory where the unit tests are located" 
@@ -84,6 +92,13 @@ runs:
         LOAD: "true"
         TAGS: "test:test"
 
+    - name: Prepare run-time secrets
+      id: run-time-secrets
+      uses: ./reusable-workflow/.github/actions/prepare-run-time-secrets
+      with:
+        RUN_TIME_SECRETS: ${{ inputs.RUN_TIME_SECRETS }}
+        RUN_TIME_SECRETS_AS_ENV_VARS: ${{ inputs.RUN_TIME_SECRETS_AS_ENV_VARS }}
+
     - name: Run unit tests
       shell: bash
       run: |
@@ -99,6 +114,7 @@ runs:
 
         docker run --rm \
           --network test-network \
+          ${{ steps.run-time-secrets.outputs.DOCKER_ARGS }} \
           -e APP_ENV=test \
           -e PIMCORE_TEST_DB_DSN='mysql://test:test@test-db:3306/test?serverVersion=mariadb-11.4.0' \
           -e PIMCORE_PRODUCT_KEY='${{ inputs.PIMCORE_PRODUCT_KEY }}' \
@@ -154,9 +170,14 @@ runs:
                 --no-interaction
             fi
 
-            if [ ! -d "/var/www/html/var/classes/DataObject" ] || [ -z "$(ls -A /var/www/html/var/classes/DataObject 2>/dev/null)" ]; then
-              echo "Building Data Object classes..."
-              $RUN_AS /var/www/html/bin/console pimcore:build:classes
+            echo "Building Data Object classes..."
+            $RUN_AS /var/www/html/bin/console pimcore:build:classes
+            # --db-only was added in Pimcore 12.2.0
+            classes_rebuild_help=$($RUN_AS /var/www/html/bin/console pimcore:deployment:classes-rebuild --help)
+            if grep -q -- "--db-only" <<< "$classes_rebuild_help"; then
+              $RUN_AS /var/www/html/bin/console pimcore:deployment:classes-rebuild --create-classes --db-only
+            else
+              $RUN_AS /var/www/html/bin/console pimcore:deployment:classes-rebuild --create-classes
             fi
             
             echo "Running tests..."

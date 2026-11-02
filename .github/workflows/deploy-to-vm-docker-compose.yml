@@ -9,7 +9,6 @@
 #     uses: Torq-North/pimcore-github-actions-workflows/.github/workflows/deploy-to-vm-docker-compose.yml@v7
 #     permissions:
 #       contents: read
-#       actions: read
 #       packages: write
 #     with:
 #       # required inputs
@@ -42,6 +41,11 @@ on:
         required: true
         type: string
         description: Self-hosted runner for this workflow (see https://github.com/Torq-North/pimcore-github-actions-workflows#self-hosted-runners)
+      BUILD_RUNNER:
+        required: false
+        type: string
+        default: ubuntu-24.04
+        description: Runner used to build and push the Docker images and send failure notifications (defaults to a GitHub-hosted runner)
       SKIP_LINTING:
         required: false
         type: boolean
@@ -255,12 +259,12 @@ on:
 jobs:
   build-and-push-images:
     name: Build and push Pimcore Docker images
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ inputs.BUILD_RUNNER }}
     environment: ${{ inputs.ENVIRONMENT }}
 
     steps:
       - name: Create token from GitHub App
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         if: ${{ inputs.GITHUB_APP_CHECKOUT }}
         id: create_token
         with:
@@ -275,19 +279,11 @@ jobs:
           fetch-depth: 0
           token: ${{ inputs.GITHUB_APP_CHECKOUT && steps.create_token.outputs.token || secrets.CALLER_GITHUB_TOKEN }}
 
-      - name: Get workflow version
-        id: workflow-version
-        uses: canonical/get-workflow-version-action@ba22d0abdc1eda539aa3ac81af1cfee160b10714 # v1.0.4
-        with:
-          repository-name: Torq-North/pimcore-github-actions-workflows
-          file-name: deploy-to-vm-docker-compose.yml
-          github-token: ${{ secrets.CALLER_GITHUB_TOKEN }}
-
       - name: Checkout workflow repository to use composite actions
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Torq-North/pimcore-github-actions-workflows
-          ref: ${{ steps.workflow-version.outputs.sha }}
+          ref: ${{ job.workflow_sha }}
           path: reusable-workflow
           fetch-depth: 1
 
@@ -389,7 +385,7 @@ jobs:
           version: "1.7"
 
       - name: Log in to Container Registry ${{ inputs.CONTAINER_REGISTRY }}
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ${{ inputs.CONTAINER_REGISTRY }}
           username: ${{ inputs.CONTAINER_REGISTRY_USERNAME }}
@@ -412,7 +408,7 @@ jobs:
 
       - name: Extract external volume names
         id: extract-volumes
-        uses: mikefarah/yq@1b9b4ac5187171d2e5e3129be0cfa827c7f9d53d # v4.53.3
+        uses: mikefarah/yq@504fc38780cc46be8444ea1b72fb55919fc0bfb0 # v4.54.1
         with:
           cmd: >
             yq e -o=json '.volumes // {} | to_entries |
@@ -421,7 +417,7 @@ jobs:
 
       - name: Extract external network names
         id: extract-networks
-        uses: mikefarah/yq@1b9b4ac5187171d2e5e3129be0cfa827c7f9d53d # v4.53.3
+        uses: mikefarah/yq@504fc38780cc46be8444ea1b72fb55919fc0bfb0 # v4.54.1
         with:
           cmd: >
             yq e -o=json '.networks // {} | to_entries |
@@ -582,7 +578,7 @@ jobs:
 
   workflow-failure-notification:
     name: Send workflow failure notification to Slack channel
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ inputs.BUILD_RUNNER }}
     environment: ${{ inputs.ENVIRONMENT }}
     if: failure()
     needs:
