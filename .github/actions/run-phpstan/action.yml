@@ -34,6 +34,14 @@ inputs:
   REPMAN_CLIENT_TOKEN:
     required: false
     description: "(Optional) A client token for authenticating with a private Repman Composer repository"
+  RUN_TIME_SECRETS:
+    required: false
+    default: ""
+    description: "JSON object containing run-time secrets and their values in key: value format"
+  RUN_TIME_SECRETS_AS_ENV_VARS:
+    required: false
+    default: "false"
+    description: "For legacy systems - set to true if you want the values in RUN_TIME_SECRETS to also be passed as run-time env vars"
   PHPSTAN_ARGS:
     required: false
     default: ""
@@ -62,12 +70,23 @@ runs:
         LOAD: "true"
         TAGS: "phpstan:test"
 
+    - name: Prepare run-time secrets
+      id: run-time-secrets
+      uses: ./reusable-workflow/.github/actions/prepare-run-time-secrets
+      with:
+        RUN_TIME_SECRETS: ${{ inputs.RUN_TIME_SECRETS }}
+        RUN_TIME_SECRETS_AS_ENV_VARS: ${{ inputs.RUN_TIME_SECRETS_AS_ENV_VARS }}
+
     - name: Run PHPStan
       shell: bash
       run: |
         set -Eeuo pipefail
 
         docker run --rm \
+          ${{ steps.run-time-secrets.outputs.DOCKER_ARGS }} \
+          -e PIMCORE_PRODUCT_KEY='${{ inputs.PIMCORE_PRODUCT_KEY }}' \
+          -e PIMCORE_INSTANCE_IDENTIFIER='${{ inputs.PIMCORE_INSTANCE_IDENTIFIER }}' \
+          -e PIMCORE_ENCRYPTION_SECRET='${{ inputs.PIMCORE_ENCRYPTION_SECRET }}' \
           --entrypoint /bin/bash \
           phpstan:test \
           -c '
@@ -103,7 +122,7 @@ runs:
             fi
 
             echo "Running PHPStan..."
-            $RUN_AS /var/www/html/vendor/bin/phpstan analyse --no-progress --error-format=github ${{ inputs.PHPSTAN_ARGS }}
+            $RUN_AS /var/www/html/vendor/bin/phpstan analyse --no-progress ${{ inputs.PHPSTAN_ARGS }}
             # phpstan will exit above with a non-zero code if it finds any issues
             echo "PHPStan found no issues!"
           '

@@ -13,7 +13,7 @@ concurrency:
 jobs:
   meta:
     name: "Meta CI checks on workflows repo"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -22,7 +22,7 @@ jobs:
         uses: ./.github/actions/lint
 
   skeleton-ci:
-    name: "Test CI workflow against Pimcore skeleton"
+    name: "Test CI against skeleton"
     uses: ./.github/workflows/ci-docker.yml
     strategy:
       fail-fast: false
@@ -35,6 +35,7 @@ jobs:
       RUN_UNIT_TESTS: true
       RUN_PHPSTAN: true
       POST_SCAN_RESULTS_TO_PR: true
+      TRIVYIGNORE_PATH: ./.trivyignore.yaml
     secrets:
       GITHUB_APP_ID: ${{ secrets.GH_APP_ID }}
       GITHUB_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -43,17 +44,17 @@ jobs:
       PIMCORE_PRODUCT_KEY: ${{ secrets.PIMCORE_PRODUCT_KEY }}
 
   skeleton-ci-azure:
-    name: "Test Azure CD workflow against Pimcore skeleton"
+    name: "Test Azure CD against skeleton"
     strategy:
       fail-fast: false
       matrix:
         include:
-          - version: 2025.x
+          - github_environment: 2025.x
             parameters_file: "./.github/ci/azure/parameters.2025.x.json"
             skeleton_ref: 2025.x-azure
     uses: ./.github/workflows/meta-ci-azure.yml
     with:
-      ENVIRONMENT: ${{ matrix.version }}
+      ENVIRONMENT: ${{ matrix.github_environment }}
       PARAMETERS_FILE: ${{ matrix.parameters_file }}
       PROJECT_REPOSITORY_REF: ${{ matrix.skeleton_ref }}
     secrets:
@@ -65,3 +66,4 @@ jobs:
       GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
   # TODO test CD to VM
+
