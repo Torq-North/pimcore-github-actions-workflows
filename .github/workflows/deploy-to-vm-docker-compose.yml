@@ -255,7 +255,7 @@ on:
 jobs:
   build-and-push-images:
     name: Build and push Pimcore Docker images
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-24.04"
     environment: ${{ inputs.ENVIRONMENT }}
 
     steps:
@@ -582,7 +582,7 @@ jobs:
 
   workflow-failure-notification:
     name: Send workflow failure notification to Slack channel
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-24.04"
     environment: ${{ inputs.ENVIRONMENT }}
     if: failure()
     needs:

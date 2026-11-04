@@ -62,7 +62,7 @@ on:
 jobs:
   back-up-file-share:
     name: Create a snapshot of an Azure NFS File Share
-    runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.RUNNER || 'ubuntu-24.04' }}
     environment: ${{ inputs.ENVIRONMENT }}
     steps:
       - name: Get workflow version

@@ -61,7 +61,7 @@ on:
 jobs:
   back-up-db:
     name: Create an backup of an Azure Disk
-    runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.RUNNER || 'ubuntu-24.04' }}
     environment: ${{ inputs.ENVIRONMENT }}
     steps:
       - name: Get workflow version

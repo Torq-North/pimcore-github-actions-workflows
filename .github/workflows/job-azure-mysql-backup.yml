@@ -84,7 +84,7 @@ on:
 jobs:
   back-up-db:
     name: Back up Azure MySQL database to a Storage Account
-    runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.RUNNER || 'ubuntu-24.04' }}
     environment: ${{ inputs.ENVIRONMENT }}
     steps:
       - name: Get workflow version

@@ -114,7 +114,7 @@ on:
 jobs:
   build-docker-images:
     name: Build Docker images
-    runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.RUNNER || 'ubuntu-24.04' }}
 
     steps:
       - name: Checkout repository

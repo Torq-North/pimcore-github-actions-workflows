@@ -89,7 +89,7 @@ on:
 jobs:
   storage-sync:
     name: Azure Storage Sync
-    runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.RUNNER || 'ubuntu-24.04' }}
 
     steps:
       - name: Get workflow version

@@ -57,7 +57,7 @@ on:
 
 jobs:
   deactivate-old-revisions:
-    runs-on: ${{ inputs.RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.RUNNER || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix:
